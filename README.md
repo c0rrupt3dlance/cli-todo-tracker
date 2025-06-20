@@ -1,2 +1,2 @@
-# cli-todo-list
+# cli-todo-tracker
 basics
