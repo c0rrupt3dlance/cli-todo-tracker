@@ -1,15 +1,11 @@
 package main
 
 import (
-	task "cli-task-tracker/internal/task"
-	"encoding/json"
-	"errors"
+	taskerror "cli-task-tracker/internal/errors"
+	"cli-task-tracker/internal/task"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"strconv"
-	"time"
 )
 
 func main() {
@@ -19,46 +15,52 @@ func main() {
 	}
 	switch action {
 	case "add":
-		err := task.AddTask(os.Args[2])
+		err := taskerror.CheckAddArgs(os.Args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = task.AddTask(os.Args[2])
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	case "update":
-		id, err := strconv.Atoi(os.Args[2])
+		err := taskerror.CheckUpdateArgs(os.Args)
 		if err != nil {
-			fmt.Printf("Task id %s is incorrect type", os.Args[2])
+			fmt.Println(err)
+		}
+		id, _ := strconv.Atoi(os.Args[2])
+		err = task.UpdateTask(id, os.Args[3])
+		if err != nil {
+			fmt.Println(err)
 			os.Exit(1)
 		}
-		err = task.UpdateTask(id, os.Args[3])
 	case "delete":
-		id, err := strconv.Atoi(os.Args[2])
+		err := taskerror.CheckDeleteArgs(os.Args)
 		if err != nil {
-			fmt.Println("incorrect value type")
+			fmt.Println(err)
+			os.Exit(1)
 		}
+		id, _ := strconv.Atoi(os.Args[2])
 		err = task.DeleteTask(id)
 		if err != nil {
 			fmt.Println(err)
-		}
-	case "mark-in-progress":
-		id, err := strconv.Atoi(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
 			os.Exit(1)
 		}
-		err, result := task.MarkInProgress(id)
+	case "mark-in-progress":
+		err := taskerror.CheckStatusArgs(os.Args, "mark-in-progress")
+		id, _ := strconv.Atoi(os.Args[2])
+		_, result := task.MarkInProgress(id)
 		fmt.Println(result)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	case "mark-done":
-		id, err := strconv.Atoi(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		err, result := task.MarkDone(id)
+		err := taskerror.CheckStatusArgs(os.Args, "mark-in-progress")
+		id, _ := strconv.Atoi(os.Args[2])
+		_, result := task.MarkDone(id)
 		fmt.Println(result)
 		if err != nil {
 			fmt.Println(err)
@@ -71,10 +73,23 @@ func main() {
 		}
 		if len(os.Args) == 2 {
 			tasks := task.ListTasks("all")
-			fmt.Println(tasks)
+			for _, v := range *tasks {
+				fmt.Println("ID:", v.Id)
+				fmt.Println("Description:", v.Description)
+				fmt.Println("Status:", v.Status)
+				fmt.Println("Created at:", v.CreatedAt)
+				fmt.Println("Updated at:", v.UpdatedAt)
+				fmt.Println("========================================")
+			}
 		} else {
 			tasks := task.ListTasks(os.Args[2])
-			fmt.Println(tasks)
+			for _, v := range *tasks {
+				fmt.Println("ID:", v.Id)
+				fmt.Println("Description:", v.Description)
+				fmt.Println("Status:", v.Status)
+				fmt.Println("Created at:", v.CreatedAt)
+				fmt.Println("Updated at:", v.UpdatedAt)
+			}
 		}
 	}
 	os.Exit(1)
