@@ -1,2 +1,2 @@
 .idea
-tasks.json
+internal/task/tasks.json

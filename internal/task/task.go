@@ -1,4 +1,4 @@
-package main
+package task
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -41,46 +40,6 @@ func LoadTasks() *[]Task {
 	}
 	err = json.Unmarshal(data, &Tasks)
 	return &Tasks
-}
-
-func SaveTasks(tasks *[]Task) error {
-	jsonData, err := json.Marshal(*tasks)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile("tasks.json", jsonData, 0644)
-	if err != nil {
-		log.Printf("failed to save task list\n")
-		return err
-	}
-	log.Printf("succesfully saved task list\n")
-	return nil
-}
-
-func AddTask(taskDesc string) error {
-	var taskList *[]Task = LoadTasks()
-	id := 0
-	for _, v := range *taskList {
-		if id <= v.Id {
-			id = v.Id
-		}
-	}
-	newTask := &Task{
-		id + 1,
-		taskDesc,
-		todo,
-		time.Now(),
-		time.Now(),
-	}
-	*taskList = append(*taskList, *newTask)
-	err := SaveTasks(taskList)
-	log.Printf("added task \"%s\" with id %v \n", (*newTask).Description, (*newTask).Id)
-	if err != nil {
-		log.Printf("failed to add new task")
-		return err
-	}
-
-	return nil
 }
 
 func UpdateTask(id int, newTascDesc string) error {
@@ -197,72 +156,4 @@ func MarkDone(id int) (error, string) {
 		return err, fmt.Sprintf("couldn't save changes in task %v - %s", id, (*tasks)[taskIndex].Description)
 	}
 	return nil, fmt.Sprintf("Task %v has been marked done!", id)
-}
-
-func main() {
-	var action string
-	if len(os.Args) >= 2 {
-		action = os.Args[1]
-	}
-	switch action {
-	case "add":
-		err := AddTask(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	case "update":
-		id, err := strconv.Atoi(os.Args[2])
-		if err != nil {
-			fmt.Printf("Task id %s is incorrect type", os.Args[2])
-			os.Exit(1)
-		}
-		err = UpdateTask(id, os.Args[3])
-	case "delete":
-		id, err := strconv.Atoi(os.Args[2])
-		if err != nil {
-			fmt.Println("incorrect value type")
-		}
-		err = DeleteTask(id)
-		if err != nil {
-			fmt.Println(err)
-		}
-	case "mark-in-progress":
-		id, err := strconv.Atoi(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		err, result := MarkInProgress(id)
-		fmt.Println(result)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	case "mark-done":
-		id, err := strconv.Atoi(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		err, result := MarkDone(id)
-		fmt.Println(result)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	case "list":
-		if len(os.Args) > 3 {
-			fmt.Println("incorrect number of variables")
-			os.Exit(1)
-		}
-		if len(os.Args) == 2 {
-			tasks := ListTasks("all")
-			fmt.Println(tasks)
-		} else {
-			tasks := ListTasks(os.Args[2])
-			fmt.Println(tasks)
-		}
-	}
-	os.Exit(1)
 }
